@@ -4,7 +4,7 @@
 BINARY_NAME=taskService
 
 # Цель по умолчанию (что будет выполняться при запуске 'make')
-all: build, lint
+all: build, lint, protoRun
 
 # Сборка проекта
 build: main.go
@@ -16,6 +16,9 @@ test:
 
 lint:
 	golangci-lint run
+
+protoRun:
+	protoc --go_out=. --go-grpc_out=. proto/userService.proto
 
 # Очистка сгенерированных файлов
 clean:

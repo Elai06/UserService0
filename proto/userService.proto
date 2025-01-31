@@ -6,6 +6,7 @@ option go_package = "generated/proto";
 
 service UserService {
   rpc GetUser (GetUserRequest) returns (GetUserResponse);
+  rpc CheckUser(CheckUserRequest) returns (CheckUserResponse);
 }
 
 message GetUserRequest {
@@ -16,4 +17,12 @@ message GetUserRequest {
 message GetUserResponse {
   int64 user_id = 1;
   string name = 2;
+}
+
+message CheckUserResponse {
+  bool isExists = 1;
+}
+
+message CheckUserRequest {
+  int64 user_id = 1;
 }

@@ -31,7 +31,7 @@ func ConnectToMongo() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Connected to MongoDB!", client)
+	fmt.Println("Connected to MongoDB!")
 	collection = client.Database("UserService").Collection("user")
 }
 
