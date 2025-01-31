@@ -85,7 +85,7 @@ func GetUsers() []Data {
 }
 
 func getNextUserID() int64 {
-	opts := options.FindOne().SetSort(bson.D{{"userId", -1}})
+	opts := options.FindOne().SetSort(bson.D{{Key: "userId", Value: -1}})
 
 	var lastUser Data
 	err := collection.FindOne(context.TODO(), bson.D{}, opts).Decode(&lastUser)
