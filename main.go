@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+
 	"userService/api/grpc"
 	"userService/api/server"
 	"userService/env"
@@ -9,9 +10,9 @@ import (
 )
 
 func main() {
-	envErr := env.LoadEnv()
-	if envErr != nil {
-		panic(envErr)
+	err := env.LoadEnv()
+	if err != nil {
+		panic(err)
 	}
 
 	userService, err := repository.NewService(os.Getenv("MONGO_URL"))
@@ -19,14 +20,15 @@ func main() {
 		panic(err)
 	}
 
-	hh := server.NewHttpHandler(userService)
-	hhErr := hh.StartServer()
-	if hhErr != nil {
-		panic(hhErr)
+	hh := server.NewHTTPHandler(userService)
+
+	err = hh.StartServer()
+	if err != nil {
+		panic(err)
 	}
 
-	grpcErr := grpc.StartRpc(userService)
-	if grpcErr != nil {
-		panic(grpcErr)
+	err = grpc.Listen(userService)
+	if err != nil {
+		panic(err)
 	}
 }

@@ -2,20 +2,19 @@ package env
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
-	"log"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 func LoadEnv() error {
 	err := godotenv.Load()
 	if err != nil {
-		log.Printf("Error loading .env file")
-
-		return err
+		return fmt.Errorf("error loading .env file %v", err)
 	}
+
 	return nil
 }
 
@@ -27,12 +26,12 @@ func GetInt64(key string) (int64, error) {
 
 	base, err := strconv.Atoi(os.Getenv("INT_PARSE_BASE"))
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("environment variable %s is invalid", key)
 	}
 
 	size, err := strconv.Atoi(os.Getenv("INT_PARSE_SIZE"))
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("environment variable %s is empty", key)
 	}
 
 	return strconv.ParseInt(value, base, size)
@@ -43,5 +42,6 @@ func GetTimeDuration(key string) (time.Duration, error) {
 	if value == "" {
 		return 0, fmt.Errorf("environment variable %s is empty", key)
 	}
+
 	return time.ParseDuration(value)
 }

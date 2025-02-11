@@ -3,44 +3,44 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"google.golang.org/grpc"
-	"log"
 	"net"
+
+	"google.golang.org/grpc"
 	pb "userService/generated/proto"
 	"userService/internal/repository"
 )
 
-type UserServiceServer struct {
+type Service struct {
 	pb.UnimplementedUserServiceServer
-	userService repository.IUserService
+	userService repository.UserService
 }
 
-func StartRpc(userService repository.IUserService) error {
-	lis, err := net.Listen("tcp", ":50051")
+func Listen(userService repository.UserService) error {
+	listen, err := net.Listen("tcp", ":50051")
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-		return err
+		return fmt.Errorf("failed to listen: %v", err)
 	}
 
 	server := grpc.NewServer()
-	pb.RegisterUserServiceServer(server, &UserServiceServer{
+	pb.RegisterUserServiceServer(server, &Service{
 		userService: userService,
 	})
 
 	fmt.Print("grpc server connect success\n")
-	if err := server.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-		return err
+
+	if errServ := server.Serve(listen); errServ != nil {
+		return fmt.Errorf("failed to serve: %v", errServ)
 	}
 
 	return nil
 }
 
-func (s *UserServiceServer) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
-	user, err := s.userService.GetUserByID(req.UserId)
+func (s *Service) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
+	user, err := s.userService.GetUserByID(ctx, req.UserId)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get user: %v", err)
 	}
+
 	return &pb.GetUserResponse{
 		UserId: req.UserId,
 		Name:   user.Name,
