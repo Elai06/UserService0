@@ -258,16 +258,16 @@ func file_proto_userService_proto_rawDescGZIP() []byte {
 
 var file_proto_userService_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_userService_proto_goTypes = []any{
-	(*GetUserRequest)(nil),    // 0: user.GetUserRequest
-	(*GetUserResponse)(nil),   // 1: user.GetUserResponse
-	(*CheckUserResponse)(nil), // 2: user.CheckUserResponse
-	(*CheckUserRequest)(nil),  // 3: user.CheckUserRequest
+	(*GetUserRequest)(nil),    // 0: repository.GetUserRequest
+	(*GetUserResponse)(nil),   // 1: repository.GetUserResponse
+	(*CheckUserResponse)(nil), // 2: repository.CheckUserResponse
+	(*CheckUserRequest)(nil),  // 3: repository.CheckUserRequest
 }
 var file_proto_userService_proto_depIdxs = []int32{
-	0, // 0: user.UserService.GetUser:input_type -> user.GetUserRequest
-	3, // 1: user.UserService.CheckUser:input_type -> user.CheckUserRequest
-	1, // 2: user.UserService.GetUser:output_type -> user.GetUserResponse
-	2, // 3: user.UserService.CheckUser:output_type -> user.CheckUserResponse
+	0, // 0: repository.UserService.GetUser:input_type -> repository.GetUserRequest
+	3, // 1: repository.UserService.CheckUser:input_type -> repository.CheckUserRequest
+	1, // 2: repository.UserService.GetUser:output_type -> repository.GetUserResponse
+	2, // 3: repository.UserService.CheckUser:output_type -> repository.CheckUserResponse
 	2, // [2:4] is the sub-list for method output_type
 	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
