@@ -1,13 +1,20 @@
 package main
 
 import (
+	"os"
 	"userService/api/grpc"
 	"userService/api/server"
+	"userService/env"
 	"userService/internal/repository"
 )
 
 func main() {
-	userService, err := repository.NewService("mongodb://localhost:27017")
+	envErr := env.LoadEnv()
+	if envErr != nil {
+		panic(envErr)
+	}
+
+	userService, err := repository.NewService(os.Getenv("MONGO_URL"))
 	if err != nil {
 		panic(err)
 	}

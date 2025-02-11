@@ -6,8 +6,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
+	"userService/env"
 	"userService/internal/repository"
 )
 
@@ -26,16 +28,25 @@ func NewHttpHandler(userService repository.IUserService) *HttpHandler {
 
 func (hh *HttpHandler) StartServer() error {
 	r := mux.NewRouter()
-
 	r.HandleFunc("/createUser", hh.createUser).Methods("POST")
 	r.HandleFunc("/getUsers", hh.getUsers).Methods("GET")
 	r.HandleFunc("/getUser", hh.getUserById).Methods("GET")
 
+	writeTimeout, errEnv := env.GetTimeDuration("WRITE_TIMEOUT")
+	if errEnv != nil {
+		return errEnv
+	}
+
+	readTimeout, errEnv := env.GetTimeDuration("READ_TIMEOUT")
+	if errEnv != nil {
+		return errEnv
+	}
+
 	server := &http.Server{
-		Addr:         ":8080",
+		Addr:         os.Getenv("PORT"),
 		Handler:      r,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  readTimeout * time.Second,
+		WriteTimeout: writeTimeout * time.Second,
 	}
 
 	log.Printf("Starting server on port 8080")
