@@ -2,7 +2,7 @@ package model
 
 import "go.mongodb.org/mongo-driver/mongo"
 
-type CreateResult struct {
+type ResponseUserService struct {
 	Message string
 	Result  *mongo.InsertOneResult
 }

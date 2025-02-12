@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -10,7 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"userService/env"
 )
 
 const users = "UserService"
@@ -20,7 +18,7 @@ const service = "user"
 type UserService interface {
 	CreateUser(ctx context.Context, user Data) (*mongo.InsertOneResult, error)
 	GetUserByID(ctx context.Context, id int64) (*Data, error)
-	GetUsers() (*[]Data, error)
+	GetUsers(ctx context.Context) (*[]Data, error)
 }
 
 type Data struct {
@@ -32,18 +30,20 @@ type Repository struct {
 	client *mongo.Client
 }
 
-func NewService(url string) (*Repository, error) {
+var writeTimeOut time.Duration
+
+func NewService(url string, writeTimeout time.Duration) (*Repository, error) {
 	clientOptions := options.Client().ApplyURI(url)
+	writeTimeOut = writeTimeout
 
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
-		log.Fatal(err)
-		return nil, err
+		return nil, fmt.Errorf("connect mongodb error: %w", err)
 	}
 
 	err = client.Ping(context.TODO(), nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to ping MongoDB: %v", err)
+		return nil, fmt.Errorf("failed to ping MongoDB: %w", err)
 	}
 
 	fmt.Println("Connected to MongoDB!")
@@ -52,9 +52,9 @@ func NewService(url string) (*Repository, error) {
 }
 
 func (ur *Repository) CreateUser(ctx context.Context, user Data) (*mongo.InsertOneResult, error) {
-	userID, err := ur.getNextUserID()
+	userID, err := ur.getNextUserID(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get next user id: %v", err)
+		return nil, fmt.Errorf("failed to get next user id: %w", err)
 	}
 
 	user.UserID = userID
@@ -62,7 +62,7 @@ func (ur *Repository) CreateUser(ctx context.Context, user Data) (*mongo.InsertO
 
 	insertResult, err := collection.InsertOne(ctx, user)
 	if err != nil {
-		return nil, fmt.Errorf("failed to insert user into MongoDB: %v", err)
+		return nil, fmt.Errorf("failed to insert user into MongoDB: %w", err)
 	}
 
 	fmt.Println("Inserted document with ID:", insertResult.InsertedID)
@@ -77,54 +77,44 @@ func (ur *Repository) GetUserByID(ctx context.Context, id int64) (*Data, error) 
 
 	err := collection.FindOne(ctx, filter).Decode(&result)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find user by id: %v", err)
+		return nil, fmt.Errorf("failed to find user by id: %w", err)
 	}
 
-	fmt.Printf("Found document: %+v\n", result)
+	log.Printf("Found document: %+v\n", result)
 
 	return &result, nil
 }
 
-func (ur *Repository) GetUsers() (*[]Data, error) {
-	writeTimeout, err := env.GetTimeDuration("WRITE_TIMEOUT")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get read timeout: %v", err)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), writeTimeout*time.Second)
+func (ur *Repository) GetUsers(ctx context.Context) (*[]Data, error) {
+	ctx, cancel := context.WithTimeout(ctx, writeTimeOut*time.Second)
 	defer cancel()
 
 	var result []Data
 
 	collection := ur.getCollection()
 
-	cursor, errCollection := collection.Find(context.TODO(), bson.M{})
+	cursor, errCollection := collection.Find(ctx, bson.M{})
 	if errCollection != nil {
-		return nil, fmt.Errorf("failed to find users: %v", errCollection)
+		return nil, fmt.Errorf("failed to find users: %w", errCollection)
 	}
 
 	defer cursor.Close(ctx)
 
 	if err := cursor.All(ctx, &result); err != nil {
-		return nil, fmt.Errorf("failed to find users: %v", err)
+		return nil, fmt.Errorf("failed to find users: %w", err)
 	}
 
 	return &result, nil
 }
 
-func (ur *Repository) getNextUserID() (int64, error) {
+func (ur *Repository) getNextUserID(ctx context.Context) (int64, error) {
 	opts := options.FindOne().SetSort(bson.D{{Key: "userId", Value: -1}})
 	collection := ur.getCollection()
 
 	var lastUser Data
-
-	err := collection.FindOne(context.TODO(), bson.D{}, opts).Decode(&lastUser)
+	err := collection.FindOne(ctx, bson.D{}, opts).Decode(&lastUser)
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return 1, fmt.Errorf("failed to find next user id")
-		}
-
-		return 0, fmt.Errorf("failed to find next user id: %v", err)
+		return 0, fmt.Errorf("failed to find next user id: %w", err)
 	}
 
 	return lastUser.UserID + 1, nil

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"userService/env"
 	"userService/internal/repository"
 	"userService/model"
 )
@@ -23,21 +22,11 @@ func NewHTTPHandler(userService repository.UserService) *HTTPHandler {
 	return &HTTPHandler{userService: userService}
 }
 
-func (hh *HTTPHandler) StartServer() error {
+func (h *HTTPHandler) StartServer(writeTimeout time.Duration, readTimeout time.Duration) error {
 	r := mux.NewRouter()
-	r.HandleFunc("/createUser", hh.createUser).Methods("POST")
-	r.HandleFunc("/getUsers", hh.getUsers).Methods("GET")
-	r.HandleFunc("/getUser", hh.getUserByID).Methods("GET")
-
-	writeTimeout, errEnv := env.GetTimeDuration("WRITE_TIMEOUT")
-	if errEnv != nil {
-		return fmt.Errorf("error while getting env vars: %v", errEnv)
-	}
-
-	readTimeout, errEnv := env.GetTimeDuration("READ_TIMEOUT")
-	if errEnv != nil {
-		return fmt.Errorf("error while getting env vars: %v", errEnv)
-	}
+	r.HandleFunc("/createUser", h.createUser).Methods(http.MethodPost)
+	r.HandleFunc("/getUsers", h.getUsers).Methods(http.MethodGet)
+	r.HandleFunc("/getUser", h.getUserByID).Methods(http.MethodGet)
 
 	server := &http.Server{
 		Addr:         os.Getenv("PORT"),
@@ -56,10 +45,10 @@ func (hh *HTTPHandler) StartServer() error {
 	return nil
 }
 
-func (hh *HTTPHandler) getUserByID(w http.ResponseWriter, request *http.Request) {
+func (h *HTTPHandler) getUserByID(w http.ResponseWriter, request *http.Request) {
 	id := request.URL.Query().Get("id")
 	if id == "" {
-		log.Print("id is not valid")
+		log.Printf("id is not valid: %v", id)
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
@@ -73,7 +62,7 @@ func (hh *HTTPHandler) getUserByID(w http.ResponseWriter, request *http.Request)
 		return
 	}
 
-	data, err := hh.userService.GetUserByID(request.Context(), intID)
+	data, err := h.userService.GetUserByID(request.Context(), intID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Printf("error getting user by id: %v", err)
@@ -90,10 +79,10 @@ func (hh *HTTPHandler) getUserByID(w http.ResponseWriter, request *http.Request)
 	}
 }
 
-func (hh *HTTPHandler) getUsers(w http.ResponseWriter, _ *http.Request) {
+func (h *HTTPHandler) getUsers(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	users, usersErr := hh.userService.GetUsers()
+	users, usersErr := h.userService.GetUsers(req.Context())
 	if usersErr != nil {
 		log.Printf("error getting users: %v", usersErr)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -110,36 +99,34 @@ func (hh *HTTPHandler) getUsers(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
-func (hh *HTTPHandler) createUser(w http.ResponseWriter, request *http.Request) {
+func (h *HTTPHandler) createUser(w http.ResponseWriter, request *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var data repository.Data
-
 	decErr := json.NewDecoder(request.Body).Decode(&data)
 	if decErr != nil {
-		log.Print(w, decErr)
+		log.Printf("error while decoding json: %v", decErr)
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
-	newUser, err := hh.userService.CreateUser(request.Context(), data)
+	newUser, err := h.userService.CreateUser(request.Context(), data)
 	if err != nil {
-		log.Print(err)
+		log.Printf("error creating user: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return
 	}
 
-	result := newUser
-	createResult := &model.CreateResult{
+	response := &model.ResponseUserService{
 		Message: "User created successfully",
-		Result:  result,
+		Result:  newUser,
 	}
 
-	encoderErr := json.NewEncoder(w).Encode(&createResult)
+	encoderErr := json.NewEncoder(w).Encode(&response)
 	if encoderErr != nil {
-		log.Print(encoderErr)
+		log.Printf("error while encoding json: %v", encoderErr)
 		w.WriteHeader(http.StatusInternalServerError)
 
 		return

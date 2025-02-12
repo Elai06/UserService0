@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 
 	"google.golang.org/grpc"
@@ -26,7 +27,7 @@ func Listen(userService repository.UserService) error {
 		userService: userService,
 	})
 
-	fmt.Print("grpc server connect success\n")
+	log.Print("grpc server connect success\n")
 
 	if errServ := server.Serve(listen); errServ != nil {
 		return fmt.Errorf("failed to serve: %v", errServ)

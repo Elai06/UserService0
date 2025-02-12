@@ -31,14 +31,14 @@ func TestCreateUser(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		expectedResult model.CreateResult
+		expectedResult model.ResponseUserService
 		inputData      repository.Data
 		setupMock      func()
 		expectedError  bool
 	}{
 		{
 			name: "Success create user",
-			expectedResult: model.CreateResult{
+			expectedResult: model.ResponseUserService{
 				Message: "User created successfully",
 				Result:  &mongo.InsertOneResult{InsertedID: ""},
 			},
@@ -50,7 +50,7 @@ func TestCreateUser(t *testing.T) {
 		},
 		{
 			name: "Failed create user",
-			expectedResult: model.CreateResult{
+			expectedResult: model.ResponseUserService{
 				Message: "",
 				Result:  &mongo.InsertOneResult{InsertedID: ""},
 			},
@@ -74,7 +74,7 @@ func TestCreateUser(t *testing.T) {
 
 			mockRepo.createUser(rec, req)
 
-			resultData := model.CreateResult{}
+			resultData := model.ResponseUserService{}
 			err := json.Unmarshal(rec.Body.Bytes(), &resultData)
 
 			if tt.expectedError {
@@ -119,6 +119,7 @@ func TestGetUser(t *testing.T) {
 			},
 			expectedError: false,
 		},
+
 		{
 			name:           "Failed get user",
 			expectedResult: fakeData,

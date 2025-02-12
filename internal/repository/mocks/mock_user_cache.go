@@ -67,16 +67,16 @@ func (mr *MockUserServiceMockRecorder) GetUserByID(arg0, arg1 interface{}) *gomo
 }
 
 // GetUsers mocks base method.
-func (m *MockUserService) GetUsers() (*[]repository.Data, error) {
+func (m *MockUserService) GetUsers(arg0 context.Context) (*[]repository.Data, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUsers")
+	ret := m.ctrl.Call(m, "GetUsers", arg0)
 	ret0, _ := ret[0].(*[]repository.Data)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUsers indicates an expected call of GetUsers.
-func (mr *MockUserServiceMockRecorder) GetUsers() *gomock.Call {
+func (mr *MockUserServiceMockRecorder) GetUsers(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUsers", reflect.TypeOf((*MockUserService)(nil).GetUsers))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUsers", reflect.TypeOf((*MockUserService)(nil).GetUsers), arg0)
 }
